@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+	<file source-language="en" datatype="plaintext" original="EXT:aigelb/Resources/Private/Language/locallang_db.xlf" date="2025-02-11T10:01:51Z" product-name="aigelb">
+		<header/>
+		<body>
+			<trans-unit id="aigelb_tabheader">
+				<source>AI-Gelb</source>
+			</trans-unit>
+			<trans-unit id="generator">
+				<source>AI-Gelb</source>
+			</trans-unit>
+			<trans-unit id="tx_aigelb_promptrequirement">
+				<source>Prompt</source>
+			</trans-unit>
+			<trans-unit id="tx_aigelb_indexpage">
+				<source>Index page</source>
+			</trans-unit>
+			<trans-unit id="generator">
+				<source>Prompt</source>
+			</trans-unit>
+			<trans-unit id="tx_aigelb_knowledgebase">
+				<source>Knowledgebase (URL)</source>
+			</trans-unit>
+			<trans-unit id="generator">
+				<source>Knowledgebase (URL)</source>
+			</trans-unit>
+			<trans-unit id="tx_aigelb_language">
+				<source>Language (de|en)</source>
+			</trans-unit>
+			<trans-unit id="tx_aigelb_lastupdated">
+				<source>Last updated (Internal)</source>
+			</trans-unit>
+			<trans-unit id="tx_aigelb_domain_model_agent.agentid">
+				<source>ID (Internal)</source>
+			</trans-unit>
+			<trans-unit id="tx_aigelb_domain_model_agent.lastupdated">
+				<source>Last updated (Internal)</source>
+			</trans-unit>
+			<trans-unit id="tx_aigelb_domain_model_agent.questions">
+				<source>Questions</source>
+			</trans-unit>
+			<trans-unit id="tx_aigelb_domain_model_agent.question">
+				<source>Question</source>
+			</trans-unit>
+			<trans-unit id="generator">
+				<source>Language</source>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>

@@ -1,0 +1,25 @@
+{
+	"name": "igelb/aigelb",
+	"type": "typo3-cms-extension",
+	"description": "AI-Gelb TYPO3 integration",
+	"version": "1.0.0",
+	"authors": [
+		{
+			"name": "i-gelb GmbH",
+			"role": "Product Manager"
+		}
+	],
+	"require": {
+		"typo3/cms-core": "^13.4"
+	},
+	"autoload": {
+		"psr-4": {
+			"IGelb\\Aigelb\\": "Classes"
+		}
+	},
+	"extra": {
+		"typo3/cms": {
+			"extension-key": "aigelb"
+		}
+	}
+}

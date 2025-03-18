@@ -1,0 +1,19 @@
+plugin.tx_aigelb {
+  view {
+    templateRootPaths.0 = EXT:aigelb/Resources/Private/Frontend/Templates/
+    partialRootPaths.0 = EXT:aigelb/Resources/Private/Frontend/Partials/
+    layoutRootPaths.0 = EXT:aigelb/Resources/Private/Frontend/Layouts/
+  }
+
+  mvc {
+    callDefaultActionIfActionCantBeResolved = 1
+  }
+}
+
+# Rendering of content elements
+lib.tx_aigelb.contentElementRendering = RECORDS
+lib.tx_aigelb.contentElementRendering {
+  tables = tt_content
+  source.current = 1
+  dontCheckPid = 1
+}
