@@ -7,118 +7,119 @@ namespace IGelb\Aigelb\Service;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\RequestFactory;
+use TYPO3\CMS\Core\Http\Response;
 
 #[Channel('aigelb-service')]
 final readonly class AIGelbService {
+    private const API_TOKEN_ENV = 'AIGELB_API_TOKEN';
+    private const API_URL_ENV = 'AIGELB_API_URL';
+    private const RAG_URL_ENV = 'AIGELB_RAG_URL';
+    private const AGENT_ID_ENV = 'AIGELB_AGENTID';
+
     public function __construct(
         protected readonly LoggerInterface $logger,
         private readonly ConnectionPool $connectionPool,
         protected readonly RequestFactory $requestFactory,
     ) {}
 
-    public function getAgentId(string $baseUrl): string {
-        // in case we already have an agentId set in Directus we transfer it through .env
-        if (getenv('AIGELB_AGENTID')) {
-            return getenv('AIGELB_AGENTID');
+    /**
+     * Returns the API token from the environment variable
+     * @throws \RuntimeException If the token is not found
+     */
+    private function getApiToken(): string {
+        $token = getenv(self::API_TOKEN_ENV);
+        if (!$token) {
+            throw new \RuntimeException('API Token not found in environment variables');
         }
-
-        $additionalOptions = [
-            'headers' => [
-                'Authorization' => 'Bearer ' . getenv('AIGELB_API_TOKEN'),
-            ],
-            'body' => '{"url": "' . $baseUrl . '"}',
-        ];
-
-        try {
-            $response = $this->requestFactory->request(
-                getenv('AIGELB_API_URL') . '/api/agent',
-                'POST',
-                $additionalOptions
-            );
-
-            $contents = json_decode($response->getBody()->getContents());
-            $this->logger->info('Fetch AgentID with token' . getenv('AIGELB_API_TOKEN') . ' and received ' . $contents->id);
-            return $contents->id;
-        } catch (\Exception $e) {
-            $this->logger->error('Fetch AgentID with token' . getenv('AIGELB_API_TOKEN') . ' and received error ' . $e->getMessage());
-            return '';
-        }
+        return $token;
     }
 
-    public function addKnowledge(string $agentId, string $url, string $promptRequirements): string {
-        $additionalOptions = [
-            'headers' => [
-                'Authorization' => 'Bearer ' . getenv('AIGELB_API_TOKEN'),
-            ],
-            'body' => '{"type": "page"'
-                . ', "context": "' . $promptRequirements
-                . '", "source": "' . $url
-                . '"'
-                . '}',
+    /**
+     * Creates the default headers for API requests
+     */
+    private function getDefaultHeaders(): array {
+        return [
+            'Authorization' => 'Bearer ' . $this->getApiToken(),
+            'Content-Type' => 'application/json',
         ];
+    }
+
+    /**
+     * Sends a request to the API and returns the response
+     * @throws \Exception On API request error
+     */
+    private function sendApiRequest(string $url, string $method, array $data): Response {
+        $options = [
+            'headers' => $this->getDefaultHeaders(),
+            'body' => json_encode($data),
+        ];
+        
+        return $this->requestFactory->request($url, $method, $options);
+    }
+
+    /**
+     * Retrieves the Agent ID from the environment or the API
+     */
+    public function getAgentId(string $baseUrl): string {
+        // In case we already have an agentId set in Directus we transfer it through .env
+        if ($agentId = getenv(self::AGENT_ID_ENV)) {
+            return $agentId;
+        }
 
         try {
-            $response = $this->requestFactory->request(
-                getenv('AIGELB_API_URL') . '/api/agent/' . $agentId . '/knowledge',
-                'POST',
-                $additionalOptions
-            );
-
-            return $response->getBody()->getContents();
+            $apiUrl = getenv(self::API_URL_ENV) . '/api/agent';
+            $response = $this->sendApiRequest($apiUrl, 'POST', ['url' => $baseUrl]);
+            
+            $contents = json_decode($response->getBody()->getContents());
+            $this->logger->info('Agent ID fetched successfully', ['id' => $contents->id]);
+            
+            return $contents->id;
         } catch (\Exception $e) {
-            $this->logger->error('Tried to add knowledge with agentId ' . $agentId . ' and received error ' . $e->getMessage());
+            $this->logger->error('Failed to fetch Agent ID', [
+                'error' => $e->getMessage(),
+                'baseUrl' => $baseUrl
+            ]);
             return '';
         }
     }
 
     /**
-     * @outdated - no longer in use as such - 250313
+     * Adds knowledge to the agent
      */
-    public function updateAgent(string $agentId, int $pageUid, string $promptRequirements, string $knowledgeBase, string $language): int {
-        $additionalOptions = [
-            'headers' => [
-                'Authorization' => 'Bearer ' . getenv('AIGELB_API_TOKEN'),
-            ],
-            'body' => '{"prompt_requirements": "'
-                . $promptRequirements
-                . '", "knowledge_base": ' . $knowledgeBase
-                . ', "language": "' . $language
-                . '", "page_id": "' . $pageUid
-                . '"'
-                . '}',
-        ];
-
+    public function addKnowledge(string $agentId, string $url, string $promptRequirements): string {
         try {
-            $response = $this->requestFactory->request(
-                getenv('AIGELB_API_URL') . '/api/agent/update/' . $agentId,
-                'PUT',
-                $additionalOptions
-            );
-
-            return $response->getStatusCode();
-
+            $apiUrl = getenv(self::API_URL_ENV) . '/api/agent/' . $agentId . '/knowledge';
+            $data = [
+                'type' => 'page',
+                'context' => $promptRequirements,
+                'source' => $url
+            ];
+            
+            $response = $this->sendApiRequest($apiUrl, 'POST', $data);
+            return $response->getBody()->getContents();
         } catch (\Exception $e) {
-            $this->logger->error('Tried to update page uid ' . $pageUid . ' and received error ' . $e->getMessage());
-            return 500;
+            $this->logger->error('Failed to add knowledge', [
+                'agentId' => $agentId,
+                'url' => $url,
+                'error' => $e->getMessage()
+            ]);
+            return '';
         }
     }
 
+    /**
+     * Streams a message to the agent
+     */
     public function streamAgent(string $agentId, string $message, string $language): string {
-        $additionalOptions = [
-            'headers' => [
-                'Authorization' => 'Bearer ' . getenv('AIGELB_API_TOKEN'),
-            ],
-            'body' => '{"message": "' . $message . '", "language": "' . $language . '"}',
-            'content-type' => 'application/json',
-        ];
-
         try {
-            $response = $this->requestFactory->request(
-                getenv('AIGELB_RAG_URL') . '/api/stream/' . $agentId,
-                'POST',
-                $additionalOptions
-            );
-
+            $apiUrl = getenv(self::RAG_URL_ENV) . '/api/stream/' . $agentId;
+            $data = [
+                'message' => $message,
+                'language' => $language
+            ];
+            
+            $response = $this->sendApiRequest($apiUrl, 'POST', $data);
+            
             // Get the stream body
             $stream = $response->getBody();
             $result = '';
@@ -133,11 +134,18 @@ final readonly class AIGelbService {
 
             return $result;
         } catch (\Exception $e) {
-            $this->logger->error('Tried to stream with agentId ' . $agentId . ' and message #' . $message . '# and received error ' . $e->getMessage());
+            $this->logger->error('Failed to stream agent', [
+                'agentId' => $agentId,
+                'message' => $message,
+                'error' => $e->getMessage()
+            ]);
             return '';
         }
     }
 
+    /**
+     * Checks if an agent exists and returns its ID
+     */
     public function hasAgent(): string {
         $result = $this->connectionPool
             ->getConnectionForTable('tt_content')
@@ -148,13 +156,12 @@ final readonly class AIGelbService {
             )
             ->fetchAssociative();
 
-        if ($result === false) {
-            return '';
-        }
-
-        return $result['agentId'];
+        return $result === false ? '' : $result['agentId'];
     }
 
+    /**
+     * Saves an Agent ID in the database
+     */
     public function saveAgentId(string $agentId): void {
         $this->connectionPool
             ->getConnectionForTable('tt_content')
