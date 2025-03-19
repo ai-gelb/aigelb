@@ -22,10 +22,6 @@ final readonly class AIGelbService {
         protected readonly RequestFactory $requestFactory,
     ) {}
 
-    /**
-     * Returns the API token from the environment variable
-     * @throws \RuntimeException If the token is not found
-     */
     private function getApiToken(): string {
         $token = getenv(self::API_TOKEN_ENV);
         if (!$token) {
@@ -34,9 +30,6 @@ final readonly class AIGelbService {
         return $token;
     }
 
-    /**
-     * Creates the default headers for API requests
-     */
     private function getDefaultHeaders(): array {
         return [
             'Authorization' => 'Bearer ' . $this->getApiToken(),
@@ -44,10 +37,6 @@ final readonly class AIGelbService {
         ];
     }
 
-    /**
-     * Sends a request to the API and returns the response
-     * @throws \Exception On API request error
-     */
     private function sendApiRequest(string $url, string $method, array $data): Response {
         $options = [
             'headers' => $this->getDefaultHeaders(),
@@ -57,11 +46,7 @@ final readonly class AIGelbService {
         return $this->requestFactory->request($url, $method, $options);
     }
 
-    /**
-     * Retrieves the Agent ID from the environment or the API
-     */
     public function getAgentId(string $baseUrl): string {
-        // In case we already have an agentId set in Directus we transfer it through .env
         if ($agentId = getenv(self::AGENT_ID_ENV)) {
             return $agentId;
         }
@@ -83,9 +68,6 @@ final readonly class AIGelbService {
         }
     }
 
-    /**
-     * Adds knowledge to the agent
-     */
     public function addKnowledge(string $agentId, string $url, string $promptRequirements): string {
         try {
             $apiUrl = getenv(self::API_URL_ENV) . '/api/agent/' . $agentId . '/knowledge';
@@ -107,9 +89,6 @@ final readonly class AIGelbService {
         }
     }
 
-    /**
-     * Streams a message to the agent
-     */
     public function streamAgent(string $agentId, string $message, string $language): string {
         try {
             $apiUrl = getenv(self::RAG_URL_ENV) . '/api/stream/' . $agentId;
@@ -120,13 +99,11 @@ final readonly class AIGelbService {
             
             $response = $this->sendApiRequest($apiUrl, 'POST', $data);
             
-            // Get the stream body
             $stream = $response->getBody();
             $result = '';
 
-            // Read the stream in chunks
             while (!$stream->eof()) {
-                $chunk = $stream->read(4096); // Read 4KB at a time
+                $chunk = $stream->read(4096);
                 if ($chunk !== '') {
                     $result .= $chunk;
                 }
@@ -143,9 +120,6 @@ final readonly class AIGelbService {
         }
     }
 
-    /**
-     * Checks if an agent exists and returns its ID
-     */
     public function hasAgent(): string {
         $result = $this->connectionPool
             ->getConnectionForTable('tt_content')
@@ -159,9 +133,6 @@ final readonly class AIGelbService {
         return $result === false ? '' : $result['agentId'];
     }
 
-    /**
-     * Saves an Agent ID in the database
-     */
     public function saveAgentId(string $agentId): void {
         $this->connectionPool
             ->getConnectionForTable('tt_content')
