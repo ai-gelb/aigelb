@@ -37,12 +37,12 @@ final readonly class AIGelbService {
         ];
     }
 
-    private function sendApiRequest(string $url, string $method, array $data): Response {
+    private function sendApiRequest(string $url, string $method, array $data): \GuzzleHttp\Psr7\Response {
         $options = [
             'headers' => $this->getDefaultHeaders(),
             'body' => json_encode($data),
         ];
-        
+
         return $this->requestFactory->request($url, $method, $options);
     }
 
@@ -54,10 +54,10 @@ final readonly class AIGelbService {
         try {
             $apiUrl = getenv(self::API_URL_ENV) . '/api/agent';
             $response = $this->sendApiRequest($apiUrl, 'POST', ['url' => $baseUrl]);
-            
+
             $contents = json_decode($response->getBody()->getContents());
             $this->logger->info('Agent ID fetched successfully', ['id' => $contents->id]);
-            
+
             return $contents->id;
         } catch (\Exception $e) {
             $this->logger->error('Failed to fetch Agent ID', [
@@ -76,7 +76,7 @@ final readonly class AIGelbService {
                 'context' => $promptRequirements,
                 'source' => $url
             ];
-            
+
             $response = $this->sendApiRequest($apiUrl, 'POST', $data);
             return $response->getBody()->getContents();
         } catch (\Exception $e) {
@@ -96,9 +96,9 @@ final readonly class AIGelbService {
                 'message' => $message,
                 'language' => $language
             ];
-            
+
             $response = $this->sendApiRequest($apiUrl, 'POST', $data);
-            
+
             $stream = $response->getBody();
             $result = '';
 
