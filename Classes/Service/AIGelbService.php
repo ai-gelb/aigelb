@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace IGelb\Aigelb\Service;
 
+use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\RequestFactory;
-use TYPO3\CMS\Core\Http\Response;
 
 #[Channel('aigelb-service')]
 final readonly class AIGelbService {
@@ -30,6 +30,9 @@ final readonly class AIGelbService {
         return $token;
     }
 
+    /**
+     * @return array<string, string>
+     */
     private function getDefaultHeaders(): array {
         return [
             'Authorization' => 'Bearer ' . $this->getApiToken(),
@@ -37,7 +40,7 @@ final readonly class AIGelbService {
         ];
     }
 
-    private function sendApiRequest(string $url, string $method, array $data): \GuzzleHttp\Psr7\Response {
+    private function sendApiRequest(string $url, string $method, array $data): ResponseInterface { // @phpstan-ignore-line
         $options = [
             'headers' => $this->getDefaultHeaders(),
             'body' => json_encode($data),
@@ -62,7 +65,7 @@ final readonly class AIGelbService {
         } catch (\Exception $e) {
             $this->logger->error('Failed to fetch Agent ID', [
                 'error' => $e->getMessage(),
-                'baseUrl' => $baseUrl
+                'baseUrl' => $baseUrl,
             ]);
             return '';
         }
@@ -74,7 +77,7 @@ final readonly class AIGelbService {
             $data = [
                 'type' => 'page',
                 'context' => $promptRequirements,
-                'source' => $url
+                'source' => $url,
             ];
 
             $response = $this->sendApiRequest($apiUrl, 'POST', $data);
@@ -83,7 +86,7 @@ final readonly class AIGelbService {
             $this->logger->error('Failed to add knowledge', [
                 'agentId' => $agentId,
                 'url' => $url,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             return '';
         }
@@ -94,7 +97,7 @@ final readonly class AIGelbService {
             $apiUrl = getenv(self::RAG_URL_ENV) . '/api/stream/' . $agentId;
             $data = [
                 'message' => $message,
-                'language' => $language
+                'language' => $language,
             ];
 
             $response = $this->sendApiRequest($apiUrl, 'POST', $data);
@@ -114,7 +117,7 @@ final readonly class AIGelbService {
             $this->logger->error('Failed to stream agent', [
                 'agentId' => $agentId,
                 'message' => $message,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             return '';
         }

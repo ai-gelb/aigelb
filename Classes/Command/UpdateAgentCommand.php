@@ -153,7 +153,15 @@ class UpdateAgentCommand extends Command {
      */
     protected function getAllIndexedPagesUpdatedAfterIndex() {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('pages');
-        $queryBuilder->select('uid', 'slug', 'tx_aigelb_indexpage', 'tx_aigelb_promptrequirement', 'tx_aigelb_knowledgebase', 'tx_aigelb_language', 'tx_aigelb_lastupdated')
+        $queryBuilder->select(
+            'uid',
+            'slug',
+            'tx_aigelb_indexpage',
+            'tx_aigelb_promptrequirement',
+            'tx_aigelb_knowledgebase',
+            'tx_aigelb_language',
+            'tx_aigelb_lastupdated'
+        )
             ->from('pages')
             ->where(
                 $queryBuilder->expr()->gte('SYS_LASTCHANGED', 'tx_aigelb_lastupdated')
