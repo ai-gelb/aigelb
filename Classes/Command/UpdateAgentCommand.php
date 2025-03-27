@@ -65,6 +65,13 @@ class UpdateAgentCommand extends Command {
             $this->updatePage($agentId, $page, $baseUrl);
         }
 
+        // remove hidden or deleted pages
+        $this->io->info('Checking for hidden or deleted pages'); // @phpstan-ignore-line
+        $pages = $this->getAllIndexedPagesWhichAreHiddenOrDeleted();
+        foreach ($pages as $page) {
+            $this->aIGelbService->deleteKnowledge($page['tx_aigelb_knowledgeid']);
+        }
+
         $this->io->success('All pages updated'); // @phpstan-ignore-line
         return Command::SUCCESS;
 
@@ -177,6 +184,35 @@ class UpdateAgentCommand extends Command {
             )
             ->andWhere(
                 $queryBuilder->expr()->isNotNull('tx_aigelb_lastupdated')
+            );
+        return $queryBuilder->executeQuery()->fetchAllAssociative();
+    }
+
+    protected function getAllIndexedPagesWhichAreHiddenOrDeleted(): mixed {
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('pages');
+        $queryBuilder->getRestrictions()->removeAll();
+        $queryBuilder->select(
+            'uid',
+            'tx_aigelb_knowledgeid'
+        )
+            ->from('pages')
+            ->where(
+                $queryBuilder->expr()->eq('tx_aigelb_indexpage', $queryBuilder->createNamedParameter(1, ParameterType::INTEGER))
+            )
+            ->andWhere(
+                $queryBuilder->expr()->isNotNull('tx_aigelb_knowledgebase')
+            )
+            ->andWhere(
+                $queryBuilder->expr()->isNotNull('tx_aigelb_language')
+            )
+            ->andWhere(
+                $queryBuilder->expr()->isNotNull('tx_aigelb_lastupdated')
+            )
+            ->andWhere(
+                $queryBuilder->expr()->or(
+                    $queryBuilder->expr()->eq('hidden', $queryBuilder->createNamedParameter(1, ParameterType::INTEGER)),
+                    $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(1, ParameterType::INTEGER))
+                )
             );
         return $queryBuilder->executeQuery()->fetchAllAssociative();
     }

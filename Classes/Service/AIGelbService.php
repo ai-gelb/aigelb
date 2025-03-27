@@ -40,7 +40,7 @@ final readonly class AIGelbService {
         ];
     }
 
-    private function sendApiRequest(string $url, string $method, array $data): ResponseInterface { // @phpstan-ignore-line
+    private function sendApiRequest(string $url, string $method, array $data = null): ResponseInterface { // @phpstan-ignore-line
         $options = [
             'headers' => $this->getDefaultHeaders(),
             'body' => json_encode($data),
@@ -86,6 +86,20 @@ final readonly class AIGelbService {
             $this->logger->error('Failed to add knowledge', [
                 'agentId' => $agentId,
                 'url' => $url,
+                'error' => $e->getMessage(),
+            ]);
+            return '';
+        }
+    }
+
+    public function deleteKnowledge(string $knowledgeId): string {
+        try {
+            $apiUrl = getenv(self::API_URL_ENV) . '/api/knowledge/' . $knowledgeId;
+            $response = $this->sendApiRequest($apiUrl, 'DELETE');
+            return $response->getBody()->getContents();
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to delete knowledge', [
+                'knowledgeId' => $knowledgeId,
                 'error' => $e->getMessage(),
             ]);
             return '';
